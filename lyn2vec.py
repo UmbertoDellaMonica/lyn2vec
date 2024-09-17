@@ -1,12 +1,15 @@
 import argparse
 
-from fingerprint_utils import extract_reads,extract_long_reads,compute_fingerprint_by_list,compute_long_fingerprint_by_list,mapping_projection
+from fingerprint_utils import *
 from multiprocessing.pool import Pool
 from functools import partial
+
 from factorizations import CFL, ICFL_recursive, CFL_icfl
 from factorizations_comb import d_cfl, d_icfl, d_cfl_icfl
 
+from dna_utils import generate_dna_sequences,generate_transcript_short_id,generate_genes_short_id
 
+########################################################################################################################
 # Create fingerprint files (args.step = 'basic') #################################################################
 def basic_fingerprint(args):
 
@@ -14,7 +17,9 @@ def basic_fingerprint(args):
     input_fasta = args.path + args.fasta
 
     # Extract of reads (Format = ID GENE read)
-    read_lines = extract_reads(name_file=input_fasta, filter=args.filter, rev_com=args.rev_com)
+    read_lines = extract_reads(name_file=input_fasta, filter=args.filter, rev_com=args.rev_comb)
+
+    #print_lines(read_lines)
 
     if len(read_lines) == 0:
         print('No reads extracted!')
@@ -85,7 +90,12 @@ def basic_fingerprint(args):
             fact_fingerprint_file.close()
 
         print('\nCompute fingerprint by list (%s, %s) - stop!' % (args.type_factorization, args.fact))
+########################################################################################################################
 
+
+
+
+########################################################################################################################
 # Create fingerprint files (args.step = 'generalized') #######################################################################
 def generalized_fingerprint(args):
 
@@ -93,7 +103,7 @@ def generalized_fingerprint(args):
     input_fasta = args.path + args.fasta
 
     # Extract of long reads (Format = ID GENE read)
-    read_lines = extract_long_reads(name_file=input_fasta,rev_com=args.rev_com)
+    read_lines = extract_long_reads(name_file=input_fasta,rev_com=args.rev_comb)
     print("read_lines SIZE: ", len(read_lines))
     if len(read_lines) == 0:
         print('No reads extracted!')
@@ -164,6 +174,9 @@ def generalized_fingerprint(args):
             fact_fingerprint_file.close()
 
         print('\nCompute fingerprint by list (%s, %s) - stop!' % (args.type_factorization, args.fact))
+########################################################################################################################
+
+
 
 ########################################################################################################################
 # Create fingerprint files (args.step = 'mapping') #######################################################################
@@ -176,6 +189,52 @@ def fingerprint_mapping(args):
     mapped_file.writelines(mapped_lines)
     mapped_file.close()
 ########################################################################################################################
+
+
+########################################################################################################################
+# Create fasta files (args.step = 'generate') #######################################################################
+def generate_fasta_file(sequences, file_name, format='fasta'):
+    """
+    Genera un file di sequenze in formato .fasta, .fa, o .fastq.
+
+    Args:
+        sequences (list of str): Lista delle sequenze di DNA da scrivere.
+        file_name (str): Il nome del file da salvare (senza estensione).
+        format (str): Il formato del file da generare ('fasta', 'fa', 'fastq').
+    
+    Raises:
+        ValueError: Se il formato fornito non è supportato.
+    """
+    if format not in ['fasta', 'fa', 'fastq']:
+        raise ValueError("Formato non supportato. Utilizzare 'fasta', 'fa' o 'fastq'.")
+
+    with open(f"{file_name}.{format}", 'w+') as file:
+        for sequence in sequences:
+            ID_TRANSCRIPT_GENE = generate_transcript_short_id()
+            ID_GENE = generate_genes_short_id(ID_TRANSCRIPT_GENE)
+
+            header = f">{ID_TRANSCRIPT_GENE} {ID_GENE}\n"
+            new_sequence = '\n'.join([sequence[i:i+70] for i in range(0, len(sequence), 70)])
+
+            if format in ['fasta', 'fa']:
+                content = header + new_sequence
+            else:  # fastq format
+                quality_scores = 'I' * len(sequence)  # Utilizzo di qualità fittizia
+                content = f"@{ID_TRANSCRIPT_GENE} {ID_GENE}\n{new_sequence}\n+\n{quality_scores}"
+
+            file.write(content + "\n")
+
+    print(f"File {file_name}.{format} generato con successo.")
+########################################################################################################################
+
+
+
+
+
+
+
+
+
 
 ##################################################### MAIN #############################################################
 ########################################################################################################################
@@ -196,6 +255,13 @@ if __name__ == '__main__':
     parser.add_argument('--split', dest='split', action='store', default=150, type=int)
     parser.add_argument('-n', dest='n', action='store', default=1, type=int)
 
+    # Parameters for pseudo generate DNA
+    parser.add_argument('--gc_content', type=float, required=False, help="GC content (between 0 and 1)")
+    parser.add_argument('--format', required=False, choices=['fasta', 'fa', 'fastq'], help="Output file format")
+    parser.add_argument('--size', type=int, required=False, help="Size of DNA sequence in bp")
+    parser.add_argument('--number_dna_generate',type=int,required=False,help="Size of Number of DNA you want generate")
+
+
     args = parser.parse_args()
 
     if args.type == 'basic':
@@ -209,3 +275,9 @@ if __name__ == '__main__':
     elif args.type == 'mapping':
         print('\nMapping projecyion of fingerprint files...\n')
         fingerprint_mapping(args)
+        
+    elif args.type == 'generate':
+        # Make a for with number_dna_generate 
+        sequence = generate_dna_sequences(args.number_dna_generate,args.size, args.gc_content)
+        print("\n Success generate sequences... \n")
+        generate_fasta_file(sequence, args.path, format=args.format)

@@ -1,4 +1,5 @@
 # lyn2vec
+
 A feature embedding method for biological sequences
 
 ## Pre-requisites
@@ -29,12 +30,12 @@ The dataset is composed of the following two files:
   Simulator](https://dx.doi.org/10.1093/nar/gks666). This file should be placed
   (and `gunzip`-ed) in the `testing` directory.
 
-
 ## Reproduction
 
 To carry out an experiment, follows the steps:
 
-- `Compute fingerprints` 
+- `Compute fingerprints`
+
     ```
     - `method`   : experiment_fingerprint_1f_np_step in SCRIPT fingerprint.py
 
@@ -46,8 +47,9 @@ To carry out an experiment, follows the steps:
                    a row for each read, with the format "IDGENE FINGERPRINT", where 
                    "FINGERPRINT" is the fingerprint of the read
     ```
-    
+
     `N.B.`
+
     ```
     - `--fact no_create` : do not create a file containing the factors corresponding 
                       to the fingerprint fingerprint (default: --fact create)
@@ -57,6 +59,7 @@ To carry out an experiment, follows the steps:
     ```
 
 - `Build datasets`
+
     ```
     - `method`   : experiment_dataset_step in SCRIPT training_mp.py
 
@@ -69,9 +72,9 @@ To carry out an experiment, follows the steps:
                    dataset_X_factorization which contain the samples, and 
                    dataset_y_factorization which contains the corresponding labels
     ```
-    
-    
+
 - `Train K-fingers classifiers`
+
     ```
     - `method`   : experiment_training_step in SCRIPT training.py
 
@@ -87,6 +90,7 @@ To carry out an experiment, follows the steps:
 - `Reads classification`
 
     `pre-settings:`
+
     ```
     - A k-finger trained classifier (ex. RF_ICFL_COMB_K5.pickle)
     - The dataset for the k-finger trained classifier chosen 
@@ -95,9 +99,9 @@ To carry out an experiment, follows the steps:
        factorization for which the chosen classifier was trained 
        (ex. fingerprint_ICFL_COMB.txt e fact_fingerprint_ICFL_COMB.txt)
     ```
-        
-    `RF Fingerprint classifier:` 
-        
+
+    `RF Fingerprint classifier:`
+
         `Training:`
         ```
           - `method`    : training_train_RF_fingerprint_step in SCRIPT training.py
@@ -124,9 +128,9 @@ To carry out an experiment, follows the steps:
           - `return`    : creates the file test_rf_fingerprint_result.txt containing 
                           a row for each read in the FASTA file. 
         ```
-        
+
     `Rule-based read classifier:`
-    
+
         ```
         - `method`    : testing_reads_majority_step in SCRIPT testing.py
 

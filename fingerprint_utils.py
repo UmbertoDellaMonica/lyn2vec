@@ -1,14 +1,7 @@
-import pickle
 import gzip
-import random
 import numpy as np
 
 from factorizations import CFL
-from factorizations import ICFL_recursive
-from factorizations import CFL_icfl
-from factorizations_comb import d_cfl
-from factorizations_comb import d_icfl
-from factorizations_comb import d_cfl_icfl
 from factorizations_comb import reverse_complement
 
 
@@ -261,33 +254,57 @@ def read_gz(fasta_lines, rev_com='false'):
 
 # Read file FASTA
 def read_fasta(fasta_lines, rev_com='false'):
+
+
     lines = []
     read = ''
     read_rc = ''
     step = ''
+
+    i = 1
     for s in fasta_lines:
+
+        # ID del gene e del transcript 
         if s[0] == '>':
+            print(s.strip() + ": ID Letto " + str(i))
+            i=i+1
+
             if read != '':
                 lines.append(read)
                 read = ''
+
                 if rev_com == 'false':
                     lines.append(read_rc)
                     read_rc = ''
 
             s = s.replace('\n', '')
+
             s_list = s.split()
+            
             if rev_com == 'false':
                 read = s_list[1] + ' '
+
             else:
                 read = s_list[1] + '_0 '
                 read_rc = s_list[1] + '_1 '
+
         else:
+
             s = s.replace('\n', '')
             if rev_com == 'false':
                 read += s
+
             else:
                 read += s
                 read_rc += reverse_complement(s.replace('\n', ''))
+
+    if read != '':
+        lines.append(read)
+        read = ''
+
+        if rev_com == 'false':
+            lines.append(read_rc)
+            read_rc = ''
     return lines
 
 
@@ -308,16 +325,23 @@ def extract_reads(name_file='fingerprint/ML/reads_150.fa', filter='list', n_for_
     file = None
     lines = []
 
+    print(f"Name File : {name_file} \n ")
+
+
     # Scrittura su file
     if name_file.endswith('.gz'):
         # GZ FILE
         file = gzip.open(name_file, 'rb')
         lines = read_gz(file.readlines(),rev_com)
+
+
     elif name_file.endswith('.fa') or name_file.endswith('.fasta') or name_file.endswith('.fastq'):
+        #print("Sto leggendo un file .fa ")
         # FASTA FILE
         file = open(name_file)
-        lines = read_fasta(file.readlines(),rev_com)
-
+        lines = read_fasta(file.readlines(), rev_com)
+    
+    print(str(len(lines))+" Lines Lette")
     read_lines = []
 
     cont_genes = 0
@@ -493,4 +517,15 @@ def compute_long_fingerprint_by_list(fact_file='no_create', factorization=CFL, T
 
     return fingerprint_lines, fingerprint_fact_lines
 
+def print_lines(arr):
+    """
+    Stampa tutti gli elementi di un array.
 
+    Args:
+        arr (list): L'array di elementi da stampare.
+    """
+    if not isinstance(arr, list):
+        raise TypeError("L'argomento deve essere una lista.")
+
+    for index, element in enumerate(arr):
+        print(f"\n [{index + 1}]: {element}\n")
